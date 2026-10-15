@@ -1,0 +1,45 @@
+[submodule "Kubernetes/java-on-aks"]
+	path = Kubernetes/java-on-aks
+	url = https://github.com/Azure-Samples/java-on-aks
+[submodule "Kubernetes/RockPaperScissorsLizardSpock"]
+	path = Kubernetes/RockPaperScissorsLizardSpock
+	url = https://github.com/microsoft/RockPaperScissorsLizardSpock
+[submodule "MachineLearning/ml-template-azure"]
+	path = MachineLearning/ml-template-azure
+	url = https://github.com/machine-learning-apps/ml-template-azure.git
+[submodule "MachineLearning/aml-template"]
+	path = MachineLearning/aml-template
+	url = https://github.com/Azure/aml-template.git
+[submodule "policy-templates/azure-policy"]
+	path = policy-templates/azure-policy
+	url = https://github.com/Azure/azure-policy
+[submodule "ARM-templates/azure-quickstart-templates"]
+	path = ARM-templates/azure-quickstart-templates
+	url = https://github.com/Azure/azure-quickstart-templates
+[submodule "App Samples/AppService/dotnet-sample"]
+	path = App Samples/AppService/dotnet-sample
+	url = https://github.com/Azure-Samples/dotnet-sample
+[submodule "App Samples/AppService/dotnet_core_sample"]
+	path = App Samples/AppService/dotnet_core_sample
+	url = https://github.com/Azure-Samples/dotnet_core_sample
+[submodule "App Samples/AppService/node_express_app"]
+	path = App Samples/AppService/node_express_app
+	url = https://github.com/Azure-Samples/node_express_app
+[submodule "App Samples/AppService/java-spring-petclinic"]
+	path = App Samples/AppService/java-spring-petclinic
+	url = https://github.com/Azure-Samples/java-spring-petclinic
+[submodule "App Samples/AppService/Java-application-petstore-ee7"]
+	path = App Samples/AppService/Java-application-petstore-ee7
+	url = https://github.com/Azure-Samples/Java-application-petstore-ee7
+[submodule "App Samples/AppService/pythonSample_thecatsaidno"]
+	path = App Samples/AppService/pythonSample_thecatsaidno
+	url = https://github.com/Azure-Samples/pythonSample_thecatsaidno
+[submodule "App Samples/AppService/Node_express_container"]
+	path = App Samples/AppService/Node_express_container
+	url = https://github.com/Azure-Samples/Node_express_container
+[submodule "App Samples/Kubernetes/RockPaperScissorsLizardSpock"]
+	path = App Samples/Kubernetes/RockPaperScissorsLizardSpock
+	url = https://github.com/microsoft/RockPaperScissorsLizardSpock
+[submodule "App Samples/Kubernetes/java-on-aks"]
+	path = App Samples/Kubernetes/java-on-aks
+	url = https://github.com/Azure-Samples/java-on-aks
