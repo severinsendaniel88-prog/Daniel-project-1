@@ -1,0 +1,65 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
+
+name: Build and Deploy Locally Built Python app to Azure Linux Web App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.x'        # Set the python version to use
+  AZURE_WEBAPP_NAME: 'my-app'     # Set this to your application's name
+  WORKING_DIRECTORY: '.'        # Set this to the path which is to be deployed to Web App. Defaults to the repository root
+  STARTUP_COMMAND: ''           # Set this to the startup command required to start the application. Default used is gunicorn for Flask/Django apps. Best practice: When using startup commands besides gunicorn while deploying locally built setup, explicitly mention python3 with the startup command such as 'python3 -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}'
+  SLOT_NAME: 'Production'    # Set this to your deployment slot name, default is 'Production'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout
+
+    steps:
+      - uses: actions/checkout@v4
+
+
+      - name: Set up Python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+
+      - name: Create and Start virtual environment and Install dependencies
+        run: |
+          python -m venv antenv
+          source antenv/bin/activate
+          pip install -r requirements.txt
+
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
+
+
+      - name: 'Deploy to Azure Web App'
+        uses: azure/webapps-deploy@v3
+        id: deploy-to-webapp
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          package: ${{ env.WORKING_DIRECTORY }}
+          slot-name: ${{ env.SLOT_NAME }}
+          startup-command: ${{ env.STARTUP_COMMAND }}
+
+
+      - name: 'Logout of Azure'
+        if: always()
+        run: |
+          az logout
