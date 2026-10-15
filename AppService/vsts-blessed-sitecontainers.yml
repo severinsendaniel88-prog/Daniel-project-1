@@ -1,0 +1,157 @@
+# This is a sample Azure DevOps pipeline YAML file for deploying a multi-container Python web application to Azure App Service.
+# It builds one Site Container (hello-app) and deploys it as a sidecar container alongside the blessed app (router-app).
+
+# Structure of the sample project, where router-app is the blessed app and hello-app is the sidecar container:
+# - router-app/  
+#   - requirements.txt
+#   - app.py
+# - hello-app/  
+#   - Dockerfile
+#   - app.py
+#   - requirements.txt
+
+trigger:
+  branches:
+    include:
+      - test/sitecontainer  # replace with your branch name to trigger the pipeline
+
+variables:
+  # Azure Resource Manager connection
+  azureServiceConnectionId: 'sitecontainers-sc'
+
+  # Web app name
+  webAppName: 'vsts-blessed-3'
+
+  # Project root folder
+  projectRoot: 'LinuxAppService/SiteContainers/test/samples'
+
+  # Python version
+  pythonVersion: '3.10'
+
+
+  # Container Registry service connection
+  dockerRegistryServiceConnection: 'sitecontainersampleacr-sc'
+
+  # Container Registry name
+  containerRegistry: 'sitecontainerssampleacr.azurecr.io'             # replace with your ACR login server
+  helloAppImageName: 'test/hello-app'
+
+# Agent VM image
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  # Build stage. 
+  # Builds the blessed app and sidecar container images and pushes them to ACR.
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: BuildJob
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(pythonVersion)'
+      displayName: 'Use Python $(pythonVersion)'
+
+    - script: |
+        python -m venv antenv
+        source antenv/bin/activate
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+      workingDirectory: $(projectRoot)/router-app
+      displayName: "Install requirements"
+
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: $(projectRoot)/router-app
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        replaceExistingArchive: true
+
+    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+      displayName: 'Publish package'
+      artifact: drop
+
+    # Build and Push Docker hello app Image to ACR.
+    # Any additional sidecar containers can be built and pushed in a similar way.
+    - task: Docker@2
+      displayName: 'Build and Push Docker hello app Image to ACR'
+      inputs:
+        containerRegistry: $(dockerRegistryServiceConnection)
+        repository: $(helloAppImageName)
+        command: buildAndPush
+        Dockerfile: $(projectRoot)/hello-app/Dockerfile
+        buildContext: $(projectRoot)/hello-app
+        tags: |
+          $(Build.BuildId)
+  
+  # Deploy stage.
+  # Deploys the blessed app along with the sidecar container to Azure Web App.
+- stage: Deploy
+  displayName: 'Deploy Web App'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+    - job: DeployJob
+      displayName: 'Deploy Job'
+      steps:
+        - download: current
+          artifact: drop
+          displayName: 'Download build artifact'
+        
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '$(pythonVersion)'
+          displayName: 'Use Python $(pythonVersion)'
+
+        - task: AzureWebApp@1
+          displayName: 'Deploy Azure Web App : vsts-blessed-3'
+          inputs:
+            azureSubscription: $(azureServiceConnectionId)
+            appName: $(webAppName)
+            package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
+            # mention sidecar containers in sitecontainersConfig
+            sitecontainersConfig: |
+              [
+                {
+                  "name": "hello-app",
+                  "image": "$(containerRegistry)/$(helloAppImageName):$(Build.BuildId)",
+                  "targetPort": 5001,
+                  "isMain": false
+                }
+              ]
+
+# Following properties can be set for each container in the sitecontainersConfig list.
+# SiteContainer 
+# {
+#     name: string, // mandatory
+#     image: string, // mandatory
+#     isMain: boolean, // mandatory
+#     targetPort?: string,
+#     startupCommand?: string,
+#     authType?: AUTH_TYPE,
+#     userName?: string,
+#     passwordSecret?: string,
+#     userManagedIdentityClientId?: string,
+#     environmentVariables?: EnvironmentVariable[],
+#     volumeMounts?: VolumeMount[],
+#     inheritAppSettingsAndConnectionStrings?: boolean,
+#   }
+
+# AUTH_TYPE is any of the following:
+#   Anonymous,
+#   UserCredentials,
+#   SystemIdentity,
+#   UserAssigned
+
+# type EnvironmentVariable {
+#   name: string; // mandatory
+#   value: string; // mandatory
+# }
+# type VolumeMount {
+#     name: string; // mandatory
+#     mountPath: string; // mandatory
+#     readOnly?: boolean;
+# }
